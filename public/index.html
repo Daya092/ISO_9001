@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISO 9001 - Herramienta de Gestión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
+        <div class="row w-100">
+            <div class="col-md-8 col-lg-6 mx-auto">
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-certificate fa-3x text-primary mb-3"></i>
+                            <h2 class="card-title text-primary">ISO 9001</h2>
+                            <p class="text-muted">Herramienta de Gestión de Calidad</p>
+                        </div>
+
+                        <div id="welcome-section">
+                            <div class="text-center mb-4">
+                                <h4>Bienvenido</h4>
+                                <p class="text-muted">Selecciona una opción para continuar</p>
+                            </div>
+
+                            <div class="d-grid gap-3">
+                                <button class="btn btn-outline-primary btn-lg" onclick="showRegisterForm()">
+                                    <i class="fas fa-building me-2"></i>
+                                    Registrar Empresa
+                                </button>
+                                <button class="btn btn-primary btn-lg" onclick="showLoginForm()">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    Iniciar Sesión
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Formulario de Registro -->
+                        <div id="register-section" style="display: none;">
+                            <h4 class="mb-4">Registro de Empresa</h4>
+                            <form id="registerForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="razon_social" class="form-label">Razón Social *</label>
+                                        <input type="text" class="form-control" id="razon_social" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="nit" class="form-label">NIT *</label>
+                                        <input type="text" class="form-control" id="nit" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="representante_legal" class="form-label">Representante Legal *</label>
+                                        <input type="text" class="form-control" id="representante_legal" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="tipo_empresa" class="form-label">Tipo de Empresa *</label>
+                                        <select class="form-select" id="tipo_empresa" required>
+                                            <option value="">Seleccionar...</option>
+                                            <option value="SAS">SAS</option>
+                                            <option value="LTDA">LTDA</option>
+                                            <option value="SA">SA</option>
+                                            <option value="Empresa Unipersonal">Empresa Unipersonal</option>
+                                            <option value="Cooperativa">Cooperativa</option>
+                                            <option value="Fundación">Fundación</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="direccion" class="form-label">Dirección *</label>
+                                    <input type="text" class="form-control" id="direccion" required>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="telefono" class="form-label">Teléfono *</label>
+                                        <input type="tel" class="form-control" id="telefono" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="numero_empleados" class="form-label">Número de Empleados *</label>
+                                        <input type="number" class="form-control" id="numero_empleados" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="email" class="form-label">E-mail *</label>
+                                        <input type="email" class="form-control" id="email" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="web" class="form-label">Sitio Web</label>
+                                        <input type="url" class="form-control" id="web">
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>
+                                        Registrar
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="showWelcome()">
+                                        <i class="fas fa-arrow-left me-2"></i>
+                                        Volver
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Formulario de Inicio de Sesión -->
+                        <div id="login-section" style="display: none;">
+                            <h4 class="mb-4">Iniciar Sesión</h4>
+                            <form id="loginForm">
+                                <div class="mb-3">
+                                    <label for="login_nit" class="form-label">NIT de la Empresa *</label>
+                                    <input type="text" class="form-control" id="login_nit" required>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-sign-in-alt me-2"></i>
+                                        Iniciar Sesión
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="showWelcome()">
+                                        <i class="fas fa-arrow-left me-2"></i>
+                                        Volver
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Mensajes -->
+                        <div id="message-container" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

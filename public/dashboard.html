@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ISO 9001</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-certificate me-2"></i>
+                ISO 9001
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3" id="empresa-info"></span>
+                <button class="btn btn-outline-light btn-sm" onclick="logout()">
+                    <i class="fas fa-sign-out-alt me-1"></i>
+                    Salir
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2">
+                <div class="list-group">
+                    <a href="#" class="list-group-item list-group-item-action active" onclick="showSection('desarrollo')">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Desarrollo
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" onclick="showSection('capacitacion')">
+                        <i class="fas fa-graduation-cap me-2"></i>
+                        Capacitación
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" onclick="showSection('auditoria')">
+                        <i class="fas fa-clipboard-check me-2"></i>
+                        Auditoría
+                    </a>
+                </div>
+            </div>
+
+            <!-- Contenido Principal -->
+            <div class="col-md-9 col-lg-10">
+                <!-- Sección Desarrollo -->
+                <div id="desarrollo-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-chart-line me-2"></i>Panel de Progreso</h2>
+                        <button class="btn btn-primary" onclick="refreshDashboard()">
+                            <i class="fas fa-sync-alt me-2"></i>
+                            Actualizar
+                        </button>
+                    </div>
+
+                    <!-- Resumen General -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h3 id="porcentaje-general">0%</h3>
+                                    <p class="mb-0">Progreso General</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h3 id="documentos-completados">0</h3>
+                                    <p class="mb-0">Documentos</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h3 id="videos-vistos">0</h3>
+                                    <p class="mb-0">Videos</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h3 id="auditorias-completadas">0</h3>
+                                    <p class="mb-0">Auditorías</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Barras de Progreso -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Documentos</h5>
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar" id="progress-docs" style="width: 0%"></div>
+                                    </div>
+                                    <small class="text-muted" id="docs-text">0 de 0 completados</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Videos</h5>
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar bg-info" id="progress-videos" style="width: 0%"></div>
+                                    </div>
+                                    <small class="text-muted" id="videos-text">0 de 0 vistos</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Auditoría</h5>
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar bg-warning" id="progress-audit" style="width: 0%"></div>
+                                    </div>
+                                    <small class="text-muted" id="audit-text">0 de 0 completados</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contenido en Tabs -->
+                    <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="pendientes-tab" data-bs-toggle="tab" data-bs-target="#pendientes" type="button" role="tab">
+                                <i class="fas fa-clock me-2"></i>Pendientes
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">
+                                <i class="fas fa-history me-2"></i>Historial
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="graficas-tab" data-bs-toggle="tab" data-bs-target="#graficas" type="button" role="tab">
+                                <i class="fas fa-chart-pie me-2"></i>Gráficas
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="dashboardTabContent">
+                        <!-- Pendientes -->
+                        <div class="tab-pane fade show active" id="pendientes" role="tabpanel">
+                            <div class="card mt-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Tareas Pendientes</h5>
+                                    <div id="pendientes-content">
+                                        <div class="text-center">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Historial -->
+                        <div class="tab-pane fade" id="historial" role="tabpanel">
+                            <div class="card mt-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Historial de Avances</h5>
+                                    <div id="historial-content">
+                                        <div class="text-center">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráficas -->
+                        <div class="tab-pane fade" id="graficas" role="tabpanel">
+                            <div class="card mt-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Estadísticas Visuales</h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <canvas id="progressChart" width="400" height="200"></canvas>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <canvas id="statusChart" width="400" height="200"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección Capacitación -->
+                <div id="capacitacion-section" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-graduation-cap me-2"></i>Capacitación</h2>
+                        <button class="btn btn-primary" onclick="refreshCapacitacion()">
+                            <i class="fas fa-sync-alt me-2"></i>
+                            Actualizar
+                        </button>
+                    </div>
+
+                    <div id="capacitacion-content">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección Auditoría -->
+                <div id="auditoria-section" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-clipboard-check me-2"></i>Auditoría</h2>
+                        <button class="btn btn-success" onclick="showNuevaAuditoria()">
+                            <i class="fas fa-plus me-2"></i>
+                            Nueva Auditoría
+                        </button>
+                    </div>
+
+                    <div id="auditoria-content">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nueva Auditoría -->
+    <div class="modal fade" id="nuevaAuditoriaModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Auditoría</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="nuevaAuditoriaForm">
+                        <div class="mb-3">
+                            <label for="fecha_auditoria" class="form-label">Fecha de Auditoría</label>
+                            <input type="date" class="form-control" id="fecha_auditoria" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="crearAuditoria()">Crear Auditoría</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
