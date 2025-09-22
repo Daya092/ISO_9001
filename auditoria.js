@@ -3,10 +3,11 @@ const router = express.Router();
 const { getDb } = require('./database');
 
 // Obtener lista de auditorías
-router.get('/auditorias', (req, res) => {
+router.get('/auditorias/:empresaId', (req, res) => {
+    const { empresaId } = req.params;
     const db = getDb();
     
-    db.get('SELECT id FROM empresas LIMIT 1', [], (err, empresa) => {
+    db.get('SELECT id FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
         if (err || !empresa) {
             return res.status(500).json({ error: 'Error al obtener empresa' });
         }
@@ -34,7 +35,8 @@ router.get('/auditorias', (req, res) => {
 });
 
 // Crear nueva auditoría
-router.post('/nueva', (req, res) => {
+router.post('/nueva/:empresaId', (req, res) => {
+    const { empresaId } = req.params;
     const { fecha_auditoria } = req.body;
     const db = getDb();
 
@@ -42,7 +44,7 @@ router.post('/nueva', (req, res) => {
         return res.status(400).json({ error: 'La fecha de auditoría es requerida' });
     }
 
-    db.get('SELECT id FROM empresas LIMIT 1', [], (err, empresa) => {
+    db.get('SELECT id FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
         if (err || !empresa) {
             return res.status(500).json({ error: 'Error al obtener empresa' });
         }
@@ -51,7 +53,7 @@ router.post('/nueva', (req, res) => {
         db.run(`
             INSERT INTO auditorias (empresa_id, fecha_auditoria)
             VALUES (?, ?)
-        `, [empresa.id, fecha_auditoria], function(err) {
+        `, [empresaId, fecha_auditoria], function(err) {
             if (err) {
                 return res.status(500).json({ error: 'Error al crear auditoría' });
             }
@@ -211,10 +213,11 @@ router.delete('/auditoria/:id', (req, res) => {
 });
 
 // Obtener estadísticas generales de auditorías
-router.get('/estadisticas', (req, res) => {
+router.get('/estadisticas/:empresaId', (req, res) => {
+    const { empresaId } = req.params;
     const db = getDb();
     
-    db.get('SELECT id FROM empresas LIMIT 1', [], (err, empresa) => {
+    db.get('SELECT id FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
         if (err || !empresa) {
             return res.status(500).json({ error: 'Error al obtener empresa' });
         }

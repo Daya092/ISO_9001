@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seleccionar Empresa - ISO 9001</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">Seleccionar Empresa</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="empresas-container">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                                <p class="mt-2">Cargando empresas...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 text-center">
+                            <a href="registro.html" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Registrar Nueva Empresa
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Cargar lista de empresas
+        async function cargarEmpresas() {
+            try {
+                const response = await fetch('/registro/empresas');
+                const data = await response.json();
+                
+                const container = document.getElementById('empresas-container');
+                
+                if (data.empresas && data.empresas.length > 0) {
+                    container.innerHTML = `
+                        <h5>Selecciona una empresa para continuar:</h5>
+                        <div class="list-group">
+                            ${data.empresas.map(empresa => `
+                                <a href="dashboard.html?empresa=${empresa.id}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">${empresa.razon_social}</h6>
+                                        <small>NIT: ${empresa.nit}</small>
+                                    </div>
+                                </a>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="alert alert-info">
+                            <h5>No hay empresas registradas</h5>
+                            <p>Para comenzar, necesitas registrar una empresa.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error al cargar empresas:', error);
+                document.getElementById('empresas-container').innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5>Error al cargar empresas</h5>
+                        <p>No se pudo conectar con el servidor.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Cargar empresas al iniciar la página
+        document.addEventListener('DOMContentLoaded', cargarEmpresas);
+    </script>
+</body>
+</html>

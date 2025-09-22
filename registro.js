@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
 const { getDb } = require('./database');
 
 // Mostrar formulario de registro
 router.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/registro.html');
+    res.sendFile(path.join(__dirname, 'public', 'registro.html'));
 });
 
 // Procesar registro de empresa
@@ -81,6 +82,19 @@ function createDocumentsForCompany(empresaId) {
     });
 }
 
+// Obtener lista de empresas registradas
+router.get('/empresas', (req, res) => {
+    const db = getDb();
+    
+    db.all('SELECT id, razon_social, nit FROM empresas ORDER BY fecha_registro DESC', [], (err, empresas) => {
+        if (err) {
+            return res.status(500).json({ error: 'Error en la base de datos' });
+        }
+
+        res.json({ empresas });
+    });
+});
+
 // Verificar si ya existe una empresa registrada
 router.get('/check', (req, res) => {
     const db = getDb();
@@ -92,7 +106,7 @@ router.get('/check', (req, res) => {
 
         res.json({ 
             hasCompany: row.count > 0,
-            message: row.count > 0 ? 'Ya existe una empresa registrada' : 'No hay empresa registrada'
+            message: row.count > 0 ? 'Ya existen empresas registradas' : 'No hay empresas registradas'
         });
     });
 });

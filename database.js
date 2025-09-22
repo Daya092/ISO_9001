@@ -31,7 +31,11 @@ const createTables = () => {
             web TEXT,
             fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-    `);
+    `, (err) => {
+        if (err) {
+            console.error('Error al crear tabla empresas:', err);
+        }
+    });
 
     // Tabla de documentos de capacitación
     db.run(`
@@ -46,7 +50,11 @@ const createTables = () => {
             empresa_id INTEGER,
             FOREIGN KEY (empresa_id) REFERENCES empresas (id)
         )
-    `);
+    `, (err) => {
+        if (err) {
+            console.error('Error al crear tabla documentos_capacitacion:', err);
+        }
+    });
 
     // Tabla de videos vistos
     db.run(`
@@ -58,7 +66,11 @@ const createTables = () => {
             FOREIGN KEY (documento_id) REFERENCES documentos_capacitacion (id),
             FOREIGN KEY (empresa_id) REFERENCES empresas (id)
         )
-    `);
+    `, (err) => {
+        if (err) {
+            console.error('Error al crear tabla videos_vistos:', err);
+        }
+    });
 
     // Tabla de auditorías
     db.run(`
@@ -69,7 +81,11 @@ const createTables = () => {
             fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (empresa_id) REFERENCES empresas (id)
         )
-    `);
+    `, (err) => {
+        if (err) {
+            console.error('Error al crear tabla auditorias:', err);
+        }
+    });
 
     // Tabla de checklist de auditoría
     db.run(`
@@ -82,13 +98,17 @@ const createTables = () => {
             observaciones TEXT,
             FOREIGN KEY (auditoria_id) REFERENCES auditorias (id)
         )
-    `);
-
-    // Insertar documentos de capacitación por defecto
-    insertDefaultDocuments();
-    
-    // Insertar cláusulas del checklist por defecto
-    insertDefaultChecklist();
+    `, (err) => {
+        if (err) {
+            console.error('Error al crear tabla checklist_auditoria:', err);
+        } else {
+            // Insertar datos por defecto después de crear todas las tablas
+            setTimeout(() => {
+                insertDefaultDocuments();
+                insertDefaultChecklist();
+            }, 1000);
+        }
+    });
 };
 
 const insertDefaultDocuments = () => {

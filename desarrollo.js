@@ -3,17 +3,18 @@ const router = express.Router();
 const { getDb } = require('./database');
 
 // Obtener datos del dashboard
-router.get('/dashboard', (req, res) => {
+router.get('/dashboard/:empresaId', (req, res) => {
+    const { empresaId } = req.params;
     const db = getDb();
     
-    // Obtener empresa actual
-    db.get('SELECT * FROM empresas LIMIT 1', [], (err, empresa) => {
+    // Obtener empresa específica
+    db.get('SELECT * FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
         if (err) {
             return res.status(500).json({ error: 'Error en la base de datos' });
         }
 
         if (!empresa) {
-            return res.status(404).json({ error: 'No hay empresa registrada' });
+            return res.status(404).json({ error: 'Empresa no encontrada' });
         }
 
         // Obtener estadísticas de documentos
@@ -98,10 +99,11 @@ router.get('/dashboard', (req, res) => {
 });
 
 // Obtener pendientes
-router.get('/pendientes', (req, res) => {
+router.get('/pendientes/:empresaId', (req, res) => {
+    const { empresaId } = req.params;
     const db = getDb();
     
-    db.get('SELECT id FROM empresas LIMIT 1', [], (err, empresa) => {
+    db.get('SELECT id FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
         if (err || !empresa) {
             return res.status(500).json({ error: 'Error al obtener empresa' });
         }
@@ -152,10 +154,11 @@ router.get('/pendientes', (req, res) => {
 });
 
 // Obtener historial de avances
-router.get('/historial', (req, res) => {
+router.get('/historial/:empresaId', (req, res) => {
+    const { empresaId } = req.params;
     const db = getDb();
     
-    db.get('SELECT id FROM empresas LIMIT 1', [], (err, empresa) => {
+    db.get('SELECT id FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
         if (err || !empresa) {
             return res.status(500).json({ error: 'Error al obtener empresa' });
         }

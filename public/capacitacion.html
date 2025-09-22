@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capacitación - ISO 9001</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-warning">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-graduation-cap me-2"></i>
+                Capacitación
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3" id="empresa-info">Cargando...</span>
+                <a class="nav-link" href="dashboard.html" id="back-link">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h4 class="mb-0">
+                            <i class="fas fa-file-alt me-2"></i>
+                            Documentos de Capacitación
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="documentos-container">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Cargando documentos...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let empresaId = null;
+
+        // Obtener ID de empresa de la URL
+        function obtenerEmpresaId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('empresa');
+        }
+
+        // Cargar información de la empresa
+        async function cargarEmpresa() {
+            empresaId = obtenerEmpresaId();
+            
+            if (!empresaId) {
+                alert('No se especificó una empresa. Redirigiendo...');
+                window.location.href = 'seleccion-empresa.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/inicio/empresa/${empresaId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('empresa-info').textContent = 
+                        `${data.empresa.razon_social} (${data.empresa.nit})`;
+                    document.getElementById('back-link').href = `dashboard.html?empresa=${empresaId}`;
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error al cargar empresa:', error);
+                alert('Error al cargar información de la empresa');
+                window.location.href = 'seleccion-empresa.html';
+            }
+        }
+
+        // Cargar documentos
+        async function cargarDocumentos() {
+            if (!empresaId) return;
+
+            try {
+                const response = await fetch(`/capacitacion/documentos/${empresaId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    mostrarDocumentos(data.documentos);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error al cargar documentos:', error);
+                document.getElementById('documentos-container').innerHTML = 
+                    '<div class="alert alert-danger">Error al cargar documentos</div>';
+            }
+        }
+
+        // Mostrar documentos
+        function mostrarDocumentos(documentos) {
+            const container = document.getElementById('documentos-container');
+            
+            if (documentos.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No hay documentos disponibles</div>';
+                return;
+            }
+
+            let html = '<div class="row">';
+            documentos.forEach(doc => {
+                const estadoClass = doc.estado === 'completado' ? 'success' : 'warning';
+                const estadoIcon = doc.estado === 'completado' ? 'check-circle' : 'clock';
+                
+                html += `
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">${doc.nombre}</h6>
+                                <span class="badge bg-${estadoClass}">
+                                    <i class="fas fa-${estadoIcon} me-1"></i>
+                                    ${doc.estado}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <button class="btn btn-outline-primary btn-sm me-2" onclick="descargarPlantilla(${doc.id})">
+                                        <i class="fas fa-download me-1"></i>
+                                        Descargar Plantilla
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm" onclick="subirDocumento(${doc.id})">
+                                        <i class="fas fa-upload me-1"></i>
+                                        Subir Documento
+                                    </button>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Video de Apoyo:</label>
+                                    <div class="embed-responsive embed-responsive-16by9">
+                                        <iframe class="embed-responsive-item" src="${doc.video_url}" allowfullscreen></iframe>
+                                    </div>
+                                </div>
+                                <button class="btn btn-info btn-sm" onclick="marcarVideoVisto(${doc.id})">
+                                    <i class="fas fa-eye me-1"></i>
+                                    Marcar Video como Visto
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        // Funciones de interacción
+        function descargarPlantilla(documentoId) {
+            window.open(`/capacitacion/descargar/${documentoId}`, '_blank');
+        }
+
+        function subirDocumento(documentoId) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx,.xls,.pdf,.doc,.docx';
+            input.onchange = async function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('archivo', file);
+
+                try {
+                    const response = await fetch(`/capacitacion/subir/${documentoId}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert('Documento subido exitosamente');
+                        cargarDocumentos(); // Recargar la lista
+                    } else {
+                        alert('Error: ' + result.error);
+                    }
+                } catch (error) {
+                    console.error('Error al subir documento:', error);
+                    alert('Error al subir documento');
+                }
+            };
+            input.click();
+        }
+
+        async function marcarVideoVisto(documentoId) {
+            try {
+                const response = await fetch(`/capacitacion/video-visto/${documentoId}/${empresaId}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Video marcado como visto');
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error al marcar video:', error);
+                alert('Error al marcar video como visto');
+            }
+        }
+
+        // Inicializar
+        async function inicializar() {
+            await cargarEmpresa();
+            if (empresaId) {
+                await cargarDocumentos();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', inicializar);
+    </script>
+
+    <style>
+        .embed-responsive {
+            position: relative;
+            display: block;
+            width: 100%;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .embed-responsive-16by9::before {
+            padding-top: 56.25%;
+        }
+
+        .embed-responsive::before {
+            display: block;
+            content: "";
+        }
+
+        .embed-responsive .embed-responsive-item {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+    </style>
+</body>
+</html>

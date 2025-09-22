@@ -18,10 +18,11 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Obtener lista de documentos
-router.get('/documentos', (req, res) => {
+router.get('/documentos/:empresaId', (req, res) => {
+    const { empresaId } = req.params;
     const db = getDb();
     
-    db.get('SELECT id FROM empresas LIMIT 1', [], (err, empresa) => {
+    db.get('SELECT id FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
         if (err || !empresa) {
             return res.status(500).json({ error: 'Error al obtener empresa' });
         }
@@ -89,11 +90,11 @@ router.post('/subir/:id', upload.single('archivo'), (req, res) => {
 });
 
 // Marcar video como visto
-router.post('/video-visto/:id', (req, res) => {
-    const { id } = req.params;
+router.post('/video-visto/:id/:empresaId', (req, res) => {
+    const { id, empresaId } = req.params;
     const db = getDb();
 
-    db.get('SELECT id FROM empresas LIMIT 1', [], (err, empresa) => {
+    db.get('SELECT id FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
         if (err || !empresa) {
             return res.status(500).json({ error: 'Error al obtener empresa' });
         }
@@ -118,7 +119,7 @@ router.post('/video-visto/:id', (req, res) => {
             db.run(`
                 INSERT INTO videos_vistos (documento_id, empresa_id)
                 VALUES (?, ?)
-            `, [id, empresa.id], function(err) {
+            `, [id, empresaId], function(err) {
                 if (err) {
                     return res.status(500).json({ error: 'Error al marcar video como visto' });
                 }
@@ -133,10 +134,11 @@ router.post('/video-visto/:id', (req, res) => {
 });
 
 // Obtener estado de videos
-router.get('/videos-estado', (req, res) => {
+router.get('/videos-estado/:empresaId', (req, res) => {
+    const { empresaId } = req.params;
     const db = getDb();
     
-    db.get('SELECT id FROM empresas LIMIT 1', [], (err, empresa) => {
+    db.get('SELECT id FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
         if (err || !empresa) {
             return res.status(500).json({ error: 'Error al obtener empresa' });
         }
@@ -150,7 +152,7 @@ router.get('/videos-estado', (req, res) => {
             LEFT JOIN videos_vistos vv ON dc.id = vv.documento_id AND vv.empresa_id = ?
             WHERE dc.empresa_id = ?
             ORDER BY dc.nombre
-        `, [empresa.id, empresa.id], (err, videos) => {
+        `, [empresaId, empresaId], (err, videos) => {
             if (err) {
                 return res.status(500).json({ error: 'Error al obtener estado de videos' });
             }
@@ -161,7 +163,8 @@ router.get('/videos-estado', (req, res) => {
 });
 
 // Crear plantillas por defecto (solo para desarrollo)
-router.post('/crear-plantillas', (req, res) => {
+router.post('/crear-plantillas/:empresaId', (req, res) => {
+    const { empresaId } = req.params;
     const db = getDb();
     
     const plantillas = [
@@ -172,7 +175,7 @@ router.post('/crear-plantillas', (req, res) => {
         { nombre: 'Plan de Capacitación', archivo: 'plan_capacitacion.xlsx' }
     ];
 
-    db.get('SELECT id FROM empresas LIMIT 1', [], (err, empresa) => {
+    db.get('SELECT id FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
         if (err || !empresa) {
             return res.status(500).json({ error: 'Error al obtener empresa' });
         }
@@ -183,7 +186,7 @@ router.post('/crear-plantillas', (req, res) => {
                 UPDATE documentos_capacitacion 
                 SET archivo_plantilla = ?
                 WHERE nombre = ? AND empresa_id = ?
-            `, [plantilla.archivo, plantilla.nombre, empresa.id], (err) => {
+            `, [plantilla.archivo, plantilla.nombre, empresaId], (err) => {
                 if (!err) completados++;
             });
         });

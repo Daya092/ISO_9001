@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría - ISO 9001</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-info">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-clipboard-check me-2"></i>
+                Auditoría
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3" id="empresa-info">Cargando...</span>
+                <a class="nav-link" href="dashboard.html" id="back-link">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Botón para nueva auditoría -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4>Auditorías</h4>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaAuditoriaModal">
+                        <i class="fas fa-plus me-2"></i>
+                        Nueva Auditoría
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de auditorías -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            Historial de Auditorías
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="auditorias-container">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Cargando auditorías...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para nueva auditoría -->
+    <div class="modal fade" id="nuevaAuditoriaModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Auditoría</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="nuevaAuditoriaForm">
+                        <div class="mb-3">
+                            <label for="fecha_auditoria" class="form-label">Fecha de Auditoría</label>
+                            <input type="date" class="form-control" id="fecha_auditoria" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="crearAuditoria()">Crear Auditoría</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para checklist -->
+    <div class="modal fade" id="checklistModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="checklistModalTitle">Checklist de Auditoría</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="checklist-container">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Cargando checklist...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-success" onclick="guardarChecklist()">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let empresaId = null;
+        let auditoriaActual = null;
+
+        // Obtener ID de empresa de la URL
+        function obtenerEmpresaId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('empresa');
+        }
+
+        // Cargar información de la empresa
+        async function cargarEmpresa() {
+            empresaId = obtenerEmpresaId();
+            
+            if (!empresaId) {
+                alert('No se especificó una empresa. Redirigiendo...');
+                window.location.href = 'seleccion-empresa.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/inicio/empresa/${empresaId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('empresa-info').textContent = 
+                        `${data.empresa.razon_social} (${data.empresa.nit})`;
+                    document.getElementById('back-link').href = `dashboard.html?empresa=${empresaId}`;
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error al cargar empresa:', error);
+                alert('Error al cargar información de la empresa');
+                window.location.href = 'seleccion-empresa.html';
+            }
+        }
+
+        // Cargar auditorías
+        async function cargarAuditorias() {
+            if (!empresaId) return;
+
+            try {
+                const response = await fetch(`/auditoria/auditorias/${empresaId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    mostrarAuditorias(data.auditorias);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error al cargar auditorías:', error);
+                document.getElementById('auditorias-container').innerHTML = 
+                    '<div class="alert alert-danger">Error al cargar auditorías</div>';
+            }
+        }
+
+        // Mostrar auditorías
+        function mostrarAuditorias(auditorias) {
+            const container = document.getElementById('auditorias-container');
+            
+            if (auditorias.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No hay auditorías registradas</div>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table table-striped">';
+            html += `
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Total Items</th>
+                        <th>Cumplidos</th>
+                        <th>% Cumplimiento</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+
+            auditorias.forEach(audit => {
+                const porcentaje = audit.total_items > 0 ? 
+                    Math.round((audit.items_cumplidos / audit.total_items) * 100) : 0;
+                const fecha = new Date(audit.fecha_auditoria).toLocaleDateString();
+                
+                html += `
+                    <tr>
+                        <td>${fecha}</td>
+                        <td>${audit.total_items}</td>
+                        <td>${audit.items_cumplidos}</td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar" role="progressbar" style="width: ${porcentaje}%">
+                                    ${porcentaje}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary me-2" onclick="abrirChecklist(${audit.id}, '${audit.fecha_auditoria}')">
+                                <i class="fas fa-edit me-1"></i>
+                                Editar
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="eliminarAuditoria(${audit.id})">
+                                <i class="fas fa-trash me-1"></i>
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Crear nueva auditoría
+        async function crearAuditoria() {
+            const fecha = document.getElementById('fecha_auditoria').value;
+            
+            if (!fecha) {
+                alert('Por favor selecciona una fecha');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/auditoria/nueva/${empresaId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ fecha_auditoria: fecha })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Auditoría creada exitosamente');
+                    bootstrap.Modal.getInstance(document.getElementById('nuevaAuditoriaModal')).hide();
+                    document.getElementById('nuevaAuditoriaForm').reset();
+                    cargarAuditorias(); // Recargar la lista
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error al crear auditoría:', error);
+                alert('Error al crear auditoría');
+            }
+        }
+
+        // Abrir checklist
+        async function abrirChecklist(auditoriaId, fecha) {
+            auditoriaActual = auditoriaId;
+            document.getElementById('checklistModalTitle').textContent = `Checklist - ${fecha}`;
+            
+            const modal = new bootstrap.Modal(document.getElementById('checklistModal'));
+            modal.show();
+
+            try {
+                const response = await fetch(`/auditoria/checklist/${auditoriaId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    mostrarChecklist(data.checklist);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error al cargar checklist:', error);
+                document.getElementById('checklist-container').innerHTML = 
+                    '<div class="alert alert-danger">Error al cargar checklist</div>';
+            }
+        }
+
+        // Mostrar checklist
+        function mostrarChecklist(checklist) {
+            const container = document.getElementById('checklist-container');
+            let html = '';
+
+            checklist.forEach(item => {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <h6 class="text-primary">${item.clausula}</h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">${item.descripcion}</p>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="cumple_${item.id}" 
+                                               id="cumple_${item.id}" value="1" ${item.cumple === 1 ? 'checked' : ''}>
+                                        <label class="form-check-label" for="cumple_${item.id}">
+                                            Cumple
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="cumple_${item.id}" 
+                                               id="no_cumple_${item.id}" value="0" ${item.cumple === 0 ? 'checked' : ''}>
+                                        <label class="form-check-label" for="no_cumple_${item.id}">
+                                            No Cumple
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <textarea class="form-control form-control-sm" 
+                                              id="obs_${item.id}" 
+                                              placeholder="Observaciones">${item.observaciones || ''}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Guardar checklist
+        async function guardarChecklist() {
+            if (!auditoriaActual) return;
+
+            const checklistItems = document.querySelectorAll('[id^="cumple_"]');
+            let actualizados = 0;
+            let total = checklistItems.length;
+
+            for (let item of checklistItems) {
+                const itemId = item.id.replace('cumple_', '');
+                const cumple = item.checked ? 1 : 0;
+                const observaciones = document.getElementById(`obs_${itemId}`).value;
+
+                try {
+                    const response = await fetch(`/auditoria/checklist/${itemId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ cumple, observaciones })
+                    });
+
+                    if (response.ok) {
+                        actualizados++;
+                    }
+                } catch (error) {
+                    console.error('Error al actualizar item:', error);
+                }
+            }
+
+            if (actualizados === total) {
+                alert('Checklist guardado exitosamente');
+                bootstrap.Modal.getInstance(document.getElementById('checklistModal')).hide();
+                cargarAuditorias(); // Recargar la lista
+            } else {
+                alert(`Se guardaron ${actualizados} de ${total} items`);
+            }
+        }
+
+        // Eliminar auditoría
+        async function eliminarAuditoria(auditoriaId) {
+            if (!confirm('¿Estás seguro de que quieres eliminar esta auditoría?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/auditoria/auditoria/${auditoriaId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Auditoría eliminada exitosamente');
+                    cargarAuditorias(); // Recargar la lista
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error al eliminar auditoría:', error);
+                alert('Error al eliminar auditoría');
+            }
+        }
+
+        // Inicializar
+        async function inicializar() {
+            await cargarEmpresa();
+            if (empresaId) {
+                await cargarAuditorias();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', inicializar);
+    </script>
+</body>
+</html>

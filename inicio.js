@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
 const { getDb } = require('./database');
 
 // Mostrar formulario de inicio de sesión
 router.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/inicio.html');
+    res.sendFile(path.join(__dirname, 'public', 'inicio.html'));
 });
 
 // Procesar inicio de sesión
@@ -40,20 +41,34 @@ router.post('/', (req, res) => {
     });
 });
 
-// Obtener información de la empresa actual
-router.get('/empresa', (req, res) => {
+// Obtener información de una empresa específica
+router.get('/empresa/:id', (req, res) => {
+    const { id } = req.params;
     const db = getDb();
     
-    db.get('SELECT * FROM empresas LIMIT 1', [], (err, empresa) => {
+    db.get('SELECT * FROM empresas WHERE id = ?', [id], (err, empresa) => {
         if (err) {
             return res.status(500).json({ error: 'Error en la base de datos' });
         }
 
         if (!empresa) {
-            return res.status(404).json({ error: 'No hay empresa registrada' });
+            return res.status(404).json({ error: 'Empresa no encontrada' });
         }
 
         res.json({ empresa });
+    });
+});
+
+// Obtener lista de empresas para selección
+router.get('/empresas', (req, res) => {
+    const db = getDb();
+    
+    db.all('SELECT id, razon_social, nit FROM empresas ORDER BY fecha_registro DESC', [], (err, empresas) => {
+        if (err) {
+            return res.status(500).json({ error: 'Error en la base de datos' });
+        }
+
+        res.json({ empresas });
     });
 });
 
