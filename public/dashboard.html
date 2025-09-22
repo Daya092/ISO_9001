@@ -176,6 +176,23 @@
                     </div>
                 </div>
             </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-folder-tree me-2"></i>
+                                Capacitación por secciones (desplegables)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="accordion" id="accordionSecciones">
+                                <!-- Secciones render -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -371,6 +388,7 @@
                     document.getElementById('graficas-progreso').style.display = 'block';
                     document.getElementById('dashboard-content').style.display = 'block';
                     document.getElementById('desarrollo-extra').style.display = 'block';
+                    cargarSeccionesCapacitacion();
                     // Agregar botón para volver a ver las tarjetas de módulos
                     if (!document.getElementById('btn-restaurar-modulos')) {
                         const btn = document.createElement('button');
@@ -406,6 +424,146 @@
                 await cargarDashboard();
                 await cargarPendientes();
                 await cargarHistorial();
+            }
+        }
+
+        async function cargarSeccionesCapacitacion() {
+            try {
+                const [resDocs, resVids] = await Promise.all([
+                    fetch('/desarrollo/capacitacion-secciones'),
+                    fetch(`/desarrollo/videos-secciones/${empresaId}`)
+                ]);
+                const dataDocs = await resDocs.json();
+                const dataVids = await resVids.json();
+                const sections = dataDocs.secciones || {};
+                const vids = dataVids.secciones || {};
+                const acc = document.getElementById('accordionSecciones');
+                acc.innerHTML = '';
+
+                const sectionOrder = [
+                    { key: 'objetivos_especificos', title: 'Objetivos específicos' },
+                    { key: 'ciclo_phva', title: 'Ciclo PHVA' },
+                    { key: 'organizacion', title: 'Organización' },
+                    { key: 'liderazgo', title: 'Liderazgo' },
+                    { key: 'planificacion', title: 'Planificación' },
+                    { key: 'apoyo', title: 'Apoyo' },
+                    { key: 'operacion', title: 'Operación' },
+                    { key: 'desempeno', title: 'Desempeño' }
+                ];
+
+                sectionOrder.forEach((sec, idx) => {
+                    const items = sections[sec.key] || [];
+                    const videos = vids[sec.key] || [];
+                    const collapseId = 'collapse' + sec.key;
+                    const card = document.createElement('div');
+                    card.className = 'accordion-item';
+                    const necesitaVideo = inferVideoNecesario(items) || videos.length > 0;
+                    card.innerHTML = `
+                        <h2 class="accordion-header" id="heading${sec.key}">
+                            <button class="accordion-button ${idx === 0 ? '' : 'collapsed'}" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                                ${sec.title} <span class="badge bg-secondary ms-2">${items.length}</span>
+                            </button>
+                        </h2>
+                        <div id="${collapseId}" class="accordion-collapse collapse ${idx === 0 ? 'show' : ''}" data-bs-parent="#accordionSecciones">
+                            <div class="accordion-body">
+                                ${renderSectionBody(items, necesitaVideo, videos)}
+                            </div>
+                        </div>`;
+                    acc.appendChild(card);
+                });
+            } catch (e) {
+                console.error('Error al cargar secciones:', e);
+            }
+        }
+
+        function inferVideoNecesario(items) {
+            // Necesita video si predominan archivos tipo plantilla/matriz a completar
+            // Palabras clave que indican necesidad de guía: plantilla, formato, matriz, requisitos a diligenciar
+            const keywords = /(plantilla|formato|matriz|xlsx|xls)/;
+            const nonGuide = /(manual|pol[ií]tica|gesti[oó]n\+del\+conocimiento|pdf|organigrama|mapa\+de\+procesos|ficha\+de\+procesos)/;
+            const countGuide = items.filter(it => keywords.test(it.nombre.toLowerCase())).length;
+            const countNon = items.filter(it => nonGuide.test(it.nombre.toLowerCase())).length;
+            if (countGuide === 0 && countNon > 0) return false;
+            return countGuide > 0;
+        }
+
+        function renderSectionBody(items, necesitaVideo, videos) {
+            if (items.length === 0) return '<div class="text-muted">Sin archivos</div>';
+            const list = items.map(it => `
+                <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2">
+                    <div class="me-3 text-truncate"><i class="fas fa-file me-2"></i><a href="${it.url}" target="_blank">${it.nombre}</a></div>
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-sm btn-outline-primary" href="${it.url}" download>
+                            <i class="fas fa-download me-1"></i>Descargar
+                        </a>
+                        <button class="btn btn-sm btn-success" onclick="abrirSubidaGenerica()">
+                            <i class="fas fa-upload me-1"></i>Subir
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            let videosHtml = '';
+            if (necesitaVideo && Array.isArray(videos) && videos.length > 0) {
+                videosHtml = `
+                <div class="mt-3">
+                    ${videos.map(v => {
+                        const visto = v.visto === 1;
+                        return `
+                        <div class=\"border rounded p-2 mb-3\">
+                            <div class=\"d-flex justify-content-between align-items-center mb-2\">
+                                <div class=\"fw-semibold text-truncate\">${v.nombre}</div>
+                                <span class=\"badge ${visto ? 'bg-success' : 'bg-warning text-dark'}\">${visto ? 'Visto' : 'Pendiente'}</span>
+                            </div>
+                            <div class=\"ratio ratio-16x9 mb-2\">
+                                <iframe src=\"${v.video_url}\" allowfullscreen></iframe>
+                            </div>
+                            <button class=\"btn btn-sm ${visto ? 'btn-secondary' : 'btn-info'}\" onclick=\"marcarVideoVistoDesdeDesarrollo(${v.id})\">
+                                <i class=\"fas ${visto ? 'fa-undo' : 'fa-eye'} me-1\"></i>
+                                ${visto ? 'Desmarcar como visto' : 'Marcar video como visto'}
+                            </button>
+                        </div>`;
+                    }).join('')}
+                </div>`;
+            }
+            return list + videosHtml;
+        }
+
+        function abrirSubidaGenerica() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx,.xls,.pdf,.doc,.docx';
+            input.onchange = async function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const form = new FormData();
+                form.append('archivo', file);
+                try {
+                    const r = await fetch('/desarrollo/subir', { method: 'POST', body: form });
+                    const j = await r.json();
+                    if (j.success) {
+                        alert('Archivo subido correctamente');
+                    } else {
+                        alert(j.error || 'Error al subir');
+                    }
+                } catch (err) {
+                    alert('Error al subir');
+                }
+            };
+            input.click();
+        }
+
+        async function marcarVideoVistoDesdeDesarrollo(documentoId) {
+            try {
+                const response = await fetch(`/capacitacion/video-visto/${documentoId}/${empresaId}`, { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    await cargarSeccionesCapacitacion();
+                    await cargarDashboard();
+                } else {
+                    alert(data.error || 'Error al actualizar estado');
+                }
+            } catch (e) {
+                alert('Error al actualizar estado del video');
             }
         }
 

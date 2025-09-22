@@ -28,11 +28,20 @@ router.get('/documentos/:empresaId', (req, res) => {
         }
 
         db.all(`
-            SELECT id, nombre, archivo_plantilla, archivo_subido, video_url, estado, fecha_subida
-            FROM documentos_capacitacion 
-            WHERE empresa_id = ?
-            ORDER BY nombre
-        `, [empresa.id], (err, documentos) => {
+            SELECT 
+                dc.id, 
+                dc.nombre, 
+                dc.archivo_plantilla, 
+                dc.archivo_subido, 
+                dc.video_url, 
+                dc.estado, 
+                dc.fecha_subida,
+                CASE WHEN vv.id IS NOT NULL THEN 1 ELSE 0 END as visto
+            FROM documentos_capacitacion dc
+            LEFT JOIN videos_vistos vv ON dc.id = vv.documento_id AND vv.empresa_id = ?
+            WHERE dc.empresa_id = ?
+            ORDER BY dc.nombre
+        `, [empresa.id, empresa.id], (err, documentos) => {
             if (err) {
                 return res.status(500).json({ error: 'Error al obtener documentos' });
             }

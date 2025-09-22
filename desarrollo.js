@@ -1,6 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const { getDb } = require('./database');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
+
+// Configuración de subida de archivos (para reemplazos de documentos completados)
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, path.join(__dirname, 'public', 'documentoscompletos'))
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+        cb(null, 'archivo-' + uniqueSuffix + path.extname(file.originalname))
+    }
+});
+const upload = multer({ storage });
 
 // Obtener datos del dashboard
 router.get('/dashboard/:empresaId', (req, res) => {
@@ -96,6 +111,166 @@ router.get('/dashboard/:empresaId', (req, res) => {
             });
         });
     });
+});
+
+// Categorizar archivos de capacitación (basado en nombres) en secciones
+router.get('/capacitacion-secciones', (req, res) => {
+    try {
+        const documentosDir = path.join(__dirname, 'public', 'documentos');
+        const files = fs.readdirSync(documentosDir);
+
+        // Definir mapeo de palabras clave a secciones
+        const secciones = {
+            'objetivos_especificos': [],
+            'ciclo_phva': [],
+            'organizacion': [],
+            'liderazgo': [],
+            'planificacion': [],
+            'apoyo': [],
+            'operacion': [],
+            'desempeno': []
+        };
+
+        const addTo = (section, file) => {
+            secciones[section].push({
+                nombre: file,
+                url: `/documentos/${encodeURIComponent(file)}`
+            });
+        };
+
+        files.forEach(file => {
+            const lower = file.toLowerCase();
+            // Planificar por cláusulas ISO 9001 y palabras clave en español
+            if (/(objetivos|smart|indicadores|6\.2)/.test(lower)) {
+                addTo('objetivos_especificos', file);
+                return;
+            }
+            if (/(phva|mejora|10\.|9\.|seguimiento|medición|analisis|evaluación|desempeño)/.test(lower)) {
+                // 9.x y 10.x suelen ser desempeño y mejora
+                if (/(9\.|seguimiento|medición|analisis|evaluación|desempeño)/.test(lower)) {
+                    addTo('desempeno', file);
+                } else {
+                    addTo('ciclo_phva', file);
+                }
+                return;
+            }
+            if (/(4\.|organización|conocimientos|partes\+interesadas|alcance|mapa\+de\+procesos|ficha\+de\+procesos|organigrama)/.test(lower)) {
+                addTo('organizacion', file);
+                return;
+            }
+            if (/(5\.|liderazgo|política)/.test(lower)) {
+                addTo('liderazgo', file);
+                return;
+            }
+            if (/(6\.|riesgos|oportunidades|planificaci[oó]n|pestal|foda|porter)/.test(lower)) {
+                addTo('planificacion', file);
+                return;
+            }
+            if (/(7\.|apoyo|recursos|infraestructura|seguimiento\+y\+medición|competencia|toma\+de\+conciencia|información\+documentada|gestión\+del\+conocimiento)/.test(lower)) {
+                addTo('apoyo', file);
+                return;
+            }
+            if (/(8\.|operacional|requisitos|procesos\+externos|liberación|salidas\+no\+conformes|control\+operacional)/.test(lower)) {
+                addTo('operacion', file);
+                return;
+            }
+            // Si no coincide, ubicar según mejores heurísticas adicionales
+            if (/indicadores|financieros|desempeño/.test(lower)) {
+                addTo('desempeno', file);
+                return;
+            }
+            // Por defecto, colocar en organizacion
+            addTo('organizacion', file);
+        });
+
+        res.json({ secciones });
+    } catch (error) {
+        console.error('Error al categorizar documentos:', error);
+        res.status(500).json({ error: 'Error al categorizar documentos' });
+    }
+});
+
+// Videos de capacitación categorizados por secciones (por nombre)
+router.get('/videos-secciones/:empresaId', (req, res) => {
+    const { empresaId } = req.params;
+    const db = getDb();
+
+    db.get('SELECT id FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
+        if (err || !empresa) {
+            return res.status(500).json({ error: 'Error al obtener empresa' });
+        }
+
+        db.all(`
+            SELECT 
+                dc.id,
+                dc.nombre,
+                dc.video_url,
+                CASE WHEN vv.id IS NOT NULL THEN 1 ELSE 0 END as visto
+            FROM documentos_capacitacion dc
+            LEFT JOIN videos_vistos vv ON dc.id = vv.documento_id AND vv.empresa_id = ?
+            WHERE dc.empresa_id = ? AND dc.video_url IS NOT NULL AND dc.video_url != ''
+            ORDER BY dc.nombre
+        `, [empresaId, empresaId], (err, rows) => {
+            if (err) {
+                return res.status(500).json({ error: 'Error al obtener videos' });
+            }
+
+            const secciones = {
+                'objetivos_especificos': [],
+                'ciclo_phva': [],
+                'organizacion': [],
+                'liderazgo': [],
+                'planificacion': [],
+                'apoyo': [],
+                'operacion': [],
+                'desempeno': []
+            };
+
+            const push = (key, row) => secciones[key].push(row);
+
+            rows.forEach(row => {
+                const lower = row.nombre.toLowerCase();
+                if (/(objetivos|smart|indicadores|6\.2)/.test(lower)) {
+                    return push('objetivos_especificos', row);
+                }
+                if (/(phva|mejora|10\.|9\.|seguimiento|medición|analisis|evaluación|desempeño)/.test(lower)) {
+                    if (/(9\.|seguimiento|medición|analisis|evaluación|desempeño)/.test(lower)) {
+                        return push('desempeno', row);
+                    }
+                    return push('ciclo_phva', row);
+                }
+                if (/(4\.|organización|conocimientos|partes\+interesadas|alcance|mapa\+de\+procesos|ficha\+de\+procesos|organigrama)/.test(lower)) {
+                    return push('organizacion', row);
+                }
+                if (/(5\.|liderazgo|política)/.test(lower)) {
+                    return push('liderazgo', row);
+                }
+                if (/(6\.|riesgos|oportunidades|planificaci[oó]n|pestal|foda|porter)/.test(lower)) {
+                    return push('planificacion', row);
+                }
+                if (/(7\.|apoyo|recursos|infraestructura|seguimiento\+y\+medición|competencia|toma\+de\+conciencia|información\+documentada|gestión\+del\+conocimiento)/.test(lower)) {
+                    return push('apoyo', row);
+                }
+                if (/(8\.|operacional|requisitos|procesos\+externos|liberación|salidas\+no\+conformes|control\+operacional)/.test(lower)) {
+                    return push('operacion', row);
+                }
+                if (/indicadores|financieros|desempeño/.test(lower)) {
+                    return push('desempeno', row);
+                }
+                push('organizacion', row);
+            });
+
+            res.json({ secciones });
+        });
+    });
+});
+
+// Subir documento completado (genérico para secciones de desarrollo)
+router.post('/subir', upload.single('archivo'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
+    }
+    res.json({ success: true, message: 'Archivo subido exitosamente', archivo: req.file.filename });
 });
 
 // Obtener pendientes
