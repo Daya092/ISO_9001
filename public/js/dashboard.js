@@ -315,6 +315,8 @@ async function loadCapacitacion() {
         data.documentos.forEach(doc => {
             const docCard = document.createElement('div');
             docCard.className = 'documento-card';
+            // Estado del video (visto: 1, no visto: 0)
+            const visto = doc.visto === 1;
             docCard.innerHTML = `
                 <div class="documento-header">
                     <h5 class="documento-title">${doc.nombre}</h5>
@@ -322,7 +324,6 @@ async function loadCapacitacion() {
                         ${doc.estado === 'completado' ? 'Completado' : 'Pendiente'}
                     </span>
                 </div>
-                
                 <div class="row">
                     <div class="col-md-6">
                         <div class="d-grid gap-2">
@@ -340,9 +341,9 @@ async function loadCapacitacion() {
                         <div class="video-container">
                             <iframe src="${doc.video_url}" frameborder="0" allowfullscreen></iframe>
                         </div>
-                        <button class="btn btn-info btn-sm w-100" onclick="marcarVideoVisto(${doc.id})">
+                        <button class="btn btn-info btn-sm w-100" onclick="marcarVideoVisto(${doc.id}, empresaId)">
                             <i class="fas fa-check me-2"></i>
-                            Marcar Video como Visto
+                            ${visto ? 'Desmarcar Video como Visto' : 'Marcar Video como Visto'}
                         </button>
                     </div>
                 </div>
@@ -484,17 +485,22 @@ function subirDocumento(documentoId) {
 
 async function marcarVideoVisto(documentoId) {
     try {
-        const response = await fetch(`/capacitacion/video-visto/${documentoId}`, {
+        // Obtener empresaId si no se pasa
+        let eid = arguments.length > 1 ? arguments[1] : (typeof empresaId !== 'undefined' ? empresaId : null);
+        if (!eid) {
+            showAlert('No se pudo obtener la empresa', 'danger');
+            return;
+        }
+        const response = await fetch(`/capacitacion/video-visto/${documentoId}/${eid}`, {
             method: 'POST'
         });
-        
         const data = await response.json();
-        
         if (data.success) {
-            showAlert('Video marcado como visto', 'success');
-            loadDashboardData();
+            showAlert(data.message, 'success');
+            // Recargar solo la sección de capacitación para actualizar el estado
+            loadCapacitacion();
         } else {
-            showAlert(data.error || 'Error al marcar video', 'danger');
+            showAlert(data.error || 'Error al marcar/desmarcar video', 'danger');
         }
     } catch (error) {
         console.error('Error al marcar video:', error);

@@ -7,7 +7,7 @@ const { getDb } = require('./database');
 // Configurar multer para subida de archivos
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'public/uploads/')
+        cb(null, 'public/documentos/')
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
@@ -109,26 +109,33 @@ router.post('/video-visto/:id/:empresaId', (req, res) => {
             }
 
             if (videoVisto) {
-                return res.json({ 
-                    success: true, 
-                    message: 'Video ya estaba marcado como visto' 
+                // Si ya está marcado, eliminar el registro (desmarcar)
+                db.run(`DELETE FROM videos_vistos WHERE id = ?`, [videoVisto.id], function(err) {
+                    if (err) {
+                        return res.status(500).json({ error: 'Error al desmarcar video' });
+                    }
+                    res.json({ 
+                        success: true, 
+                        message: 'Video desmarcado exitosamente',
+                        marcado: false
+                    });
+                });
+            } else {
+                // Marcar como visto
+                db.run(`
+                    INSERT INTO videos_vistos (documento_id, empresa_id)
+                    VALUES (?, ?)
+                `, [id, empresaId], function(err) {
+                    if (err) {
+                        return res.status(500).json({ error: 'Error al marcar video como visto' });
+                    }
+                    res.json({ 
+                        success: true, 
+                        message: 'Video marcado como visto exitosamente',
+                        marcado: true
+                    });
                 });
             }
-
-            // Marcar como visto
-            db.run(`
-                INSERT INTO videos_vistos (documento_id, empresa_id)
-                VALUES (?, ?)
-            `, [id, empresaId], function(err) {
-                if (err) {
-                    return res.status(500).json({ error: 'Error al marcar video como visto' });
-                }
-
-                res.json({ 
-                    success: true, 
-                    message: 'Video marcado como visto exitosamente' 
-                });
-            });
         });
     });
 });

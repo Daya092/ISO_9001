@@ -27,57 +27,59 @@
     </nav>
 
     <div class="container-fluid mt-4">
-        <!-- Progreso General -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">
-                            <i class="fas fa-chart-line me-2"></i>
-                            Progreso General
-                        </h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3 text-center">
-                                <div class="progress-circle mb-3">
-                                    <div class="progress-circle-inner" id="progress-general">
-                                        <span class="progress-text">0%</span>
+        <!-- Gráficas de progreso (círculos) -->
+        <div id="graficas-progreso">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Progreso General
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 text-center">
+                                    <div class="progress-circle mb-3">
+                                        <div class="progress-circle-inner" id="progress-general">
+                                            <span class="progress-text">0%</span>
+                                        </div>
                                     </div>
+                                    <h6>Progreso General</h6>
                                 </div>
-                                <h6>Progreso General</h6>
-                            </div>
-                            <div class="col-md-3 text-center">
-                                <div class="progress-circle mb-3">
-                                    <div class="progress-circle-inner" id="progress-docs">
-                                        <span class="progress-text">0%</span>
+                                <div class="col-md-3 text-center">
+                                    <div class="progress-circle mb-3">
+                                        <div class="progress-circle-inner" id="progress-docs">
+                                            <span class="progress-text">0%</span>
+                                        </div>
                                     </div>
+                                    <h6>Documentos</h6>
                                 </div>
-                                <h6>Documentos</h6>
-                            </div>
-                            <div class="col-md-3 text-center">
-                                <div class="progress-circle mb-3">
-                                    <div class="progress-circle-inner" id="progress-videos">
-                                        <span class="progress-text">0%</span>
+                                <div class="col-md-3 text-center">
+                                    <div class="progress-circle mb-3">
+                                        <div class="progress-circle-inner" id="progress-videos">
+                                            <span class="progress-text">0%</span>
+                                        </div>
                                     </div>
+                                    <h6>Videos</h6>
                                 </div>
-                                <h6>Videos</h6>
-                            </div>
-                            <div class="col-md-3 text-center">
-                                <div class="progress-circle mb-3">
-                                    <div class="progress-circle-inner" id="progress-audit">
-                                        <span class="progress-text">0%</span>
+                                <div class="col-md-3 text-center">
+                                    <div class="progress-circle mb-3">
+                                        <div class="progress-circle-inner" id="progress-audit">
+                                            <span class="progress-text">0%</span>
+                                        </div>
                                     </div>
+                                    <h6>Auditoría</h6>
                                 </div>
-                                <h6>Auditoría</h6>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Módulos -->
+        <!-- Contenido del dashboard -->
+        <div id="dashboard-content">
         <div class="row mb-4">
             <div class="col-md-4">
                 <div class="card h-100">
@@ -132,40 +134,42 @@
             </div>
         </div>
 
-        <!-- Estadísticas Detalladas -->
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-tasks me-2"></i>
-                            Pendientes
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="pendientes-container">
-                            <div class="text-center">
-                                <div class="spinner-border" role="status">
-                                    <span class="visually-hidden">Cargando...</span>
+        <!-- Contenedores ocultos para desarrollo -->
+        <div id="desarrollo-extra" style="display:none;">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-tasks me-2"></i>
+                                Pendientes
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="pendientes-container">
+                                <div class="text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-history me-2"></i>
-                            Historial Reciente
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="historial-container">
-                            <div class="text-center">
-                                <div class="spinner-border" role="status">
-                                    <span class="visually-hidden">Cargando...</span>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-history me-2"></i>
+                                Historial Reciente
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="historial-container">
+                                <div class="text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -309,6 +313,12 @@
 
             if (data.auditoria.length > 0) {
                 html += '<h6>Auditoría Pendiente:</h6><ul class="list-unstyled">';
+                // Ordenar por cláusula (de 10.3 a 4.0)
+                data.auditoria.sort((a, b) => {
+                    const numA = parseFloat(a.clausula);
+                    const numB = parseFloat(b.clausula);
+                    return numB - numA;
+                });
                 data.auditoria.forEach(item => {
                     html += `<li><i class="fas fa-clipboard text-warning me-2"></i>${item.clausula}: ${item.descripcion}</li>`;
                 });
@@ -332,7 +342,11 @@
                 historial.forEach(item => {
                     const icono = item.tipo === 'documento' ? 'fas fa-file' : 
                                  item.tipo === 'video' ? 'fas fa-video' : 'fas fa-clipboard';
-                    const fecha = new Date(item.fecha).toLocaleDateString();
+                    let fecha = '';
+                    if (item.fecha) {
+                        const d = new Date(item.fecha);
+                        fecha = isNaN(d.getTime()) ? '' : d.toLocaleDateString();
+                    }
                     html += `<li class="mb-2">
                         <i class="${icono} text-primary me-2"></i>
                         <strong>${item.nombre}</strong><br>
@@ -350,11 +364,26 @@
         // Abrir módulos
         function abrirModulo(modulo) {
             if (!empresaId) return;
-            
             switch(modulo) {
                 case 'desarrollo':
-                    // El desarrollo ya está en esta página
-                    window.scrollTo(0, 0);
+                    // Ocultar solo las tarjetas de los módulos, mostrar progreso, pendientes e historial
+                    document.querySelectorAll('.row.mb-4')[1].style.display = 'none'; // tarjetas módulos
+                    document.getElementById('graficas-progreso').style.display = 'block';
+                    document.getElementById('dashboard-content').style.display = 'block';
+                    document.getElementById('desarrollo-extra').style.display = 'block';
+                    // Agregar botón para volver a ver las tarjetas de módulos
+                    if (!document.getElementById('btn-restaurar-modulos')) {
+                        const btn = document.createElement('button');
+                        btn.id = 'btn-restaurar-modulos';
+                        btn.className = 'btn btn-outline-primary mt-4 mb-2';
+                        btn.innerHTML = '<i class="fas fa-arrow-left me-2"></i>Ver opciones de módulos';
+                        btn.onclick = function() {
+                            document.querySelectorAll('.row.mb-4')[1].style.display = 'flex';
+                            document.getElementById('desarrollo-extra').style.display = 'none';
+                            btn.remove();
+                        };
+                        document.getElementById('graficas-progreso').appendChild(btn);
+                    }
                     break;
                 case 'capacitacion':
                     window.location.href = `capacitacion.html?empresa=${empresaId}`;
@@ -369,6 +398,9 @@
 
         // Inicializar dashboard
         async function inicializar() {
+            // Mostrar ambos paneles al cargar
+            document.getElementById('graficas-progreso').style.display = 'block';
+            document.getElementById('dashboard-content').style.display = 'block';
             await cargarEmpresa();
             if (empresaId) {
                 await cargarDashboard();
