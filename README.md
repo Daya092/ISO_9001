@@ -72,6 +72,20 @@ ISO_9001/
     └── dashboard.html    # Dashboard principal
 ```
 
+## 📦 Dependencias
+
+- **express**: Framework para crear el servidor web y gestionar rutas HTTP.
+- **multer**: Middleware para manejo de archivos (subidas) en Express.
+- **path**: Utilidad para trabajar con rutas de archivos y directorios.
+- **sqlite3**: Motor de base de datos ligero y embebido.
+- **nodemon** (desarrollo): Reinicia automáticamente el servidor al detectar cambios en el código.
+
+### Instalación rápida de dependencias
+
+```bash
+npm install express multer path sqlite3 && npm install --save-dev nodemon
+```
+
 ## 🎯 Funcionalidades Principales
 
 ### 1. Registro e Inicio de Sesión

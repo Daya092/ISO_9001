@@ -8,90 +8,93 @@ router.get('/dashboard/:empresaId', (req, res) => {
     const db = getDb();
     
     // Obtener empresa específica
-    db.get('SELECT * FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
+    db.get('SELECT * FROM empresas WHERE id = ?', [empresaId], async (err, empresa) => {
         if (err) {
             return res.status(500).json({ error: 'Error en la base de datos' });
         }
-
         if (!empresa) {
             return res.status(404).json({ error: 'Empresa no encontrada' });
         }
 
-        // Obtener estadísticas de documentos
-        db.all(`
-            SELECT 
-                COUNT(*) as total,
-                SUM(CASE WHEN estado = 'completado' THEN 1 ELSE 0 END) as completados
-            FROM documentos_capacitacion 
-            WHERE empresa_id = ?
-        `, [empresa.id], (err, docStats) => {
+        // Documentos fijos
+        const documentosFijos = [
+            'Onjetivos-beneficios.xlsx',
+            'ciclo-phva.xlsx',
+            'organizacion.xlsx',
+            'liderazgo.xlsx',
+            'planifacion.xlsx',
+            'apoyo.xlsx',
+            'operacion.xlsx',
+            'desempeño.xlsx',
+            'mejora.xlsx',
+            'auditoria.xlsx'
+        ];
+        const fs = require('fs');
+        const path = require('path');
+        const dir = path.join(__dirname, 'public', 'documentoscompletos');
+        let archivosSubidos = [];
+        try {
+            archivosSubidos = fs.readdirSync(dir);
+        } catch (e) {
+            archivosSubidos = [];
+        }
+        // Consideramos completado si existe un archivo con el nombre exacto
+        let docsCompletados = documentosFijos.filter(nombre => archivosSubidos.includes(nombre)).length;
+        const totalDocs = documentosFijos.length;
+
+        // Obtener estadísticas de videos
+        db.all(`SELECT COUNT(*) as videos_vistos FROM videos_vistos WHERE empresa_id = ?`, [empresa.id], (err, videoStats) => {
             if (err) {
-                return res.status(500).json({ error: 'Error al obtener estadísticas de documentos' });
+                return res.status(500).json({ error: 'Error al obtener estadísticas de videos' });
             }
+            const videosVistos = videoStats[0]?.videos_vistos || 0;
+            const totalVideos = totalDocs;
 
-            // Obtener estadísticas de videos
+            // Obtener estadísticas de auditorías
             db.all(`
-                SELECT COUNT(*) as videos_vistos
-                FROM videos_vistos 
-                WHERE empresa_id = ?
-            `, [empresa.id], (err, videoStats) => {
+                SELECT COUNT(*) as total_auditorias,
+                       SUM(CASE WHEN ca.cumple = 1 THEN 1 ELSE 0 END) as items_cumplidos,
+                       COUNT(ca.id) as total_items
+                FROM checklist_auditoria ca
+                JOIN auditorias a ON ca.auditoria_id = a.id
+                WHERE a.empresa_id = ?
+            `, [empresa.id], (err, auditStats) => {
                 if (err) {
-                    return res.status(500).json({ error: 'Error al obtener estadísticas de videos' });
+                    return res.status(500).json({ error: 'Error al obtener estadísticas de auditorías' });
                 }
+                const itemsCumplidos = auditStats[0]?.items_cumplidos || 0;
+                const totalItems = auditStats[0]?.total_items || 0;
 
-                // Obtener estadísticas de auditorías
-                db.all(`
-                    SELECT 
-                        COUNT(*) as total_auditorias,
-                        SUM(CASE WHEN ca.cumple = 1 THEN 1 ELSE 0 END) as items_cumplidos,
-                        COUNT(ca.id) as total_items
-                    FROM checklist_auditoria ca
-                    JOIN auditorias a ON ca.auditoria_id = a.id
-                    WHERE a.empresa_id = ?
-                `, [empresa.id], (err, auditStats) => {
-                    if (err) {
-                        return res.status(500).json({ error: 'Error al obtener estadísticas de auditorías' });
-                    }
+                const porcentajeDocs = totalDocs > 0 ? Math.round((docsCompletados / totalDocs) * 100) : 0;
+                const porcentajeVideos = totalVideos > 0 ? Math.round((videosVistos / totalVideos) * 100) : 0;
+                const porcentajeAuditoria = totalItems > 0 ? Math.round((itemsCumplidos / totalItems) * 100) : 0;
+                const porcentajeGeneral = Math.round((porcentajeDocs + porcentajeVideos + porcentajeAuditoria) / 3);
 
-                    // Calcular porcentajes
-                    const totalDocs = docStats[0]?.total || 0;
-                    const docsCompletados = docStats[0]?.completados || 0;
-                    const videosVistos = videoStats[0]?.videos_vistos || 0;
-                    const totalVideos = totalDocs; // Asumimos un video por documento
-                    const itemsCumplidos = auditStats[0]?.items_cumplidos || 0;
-                    const totalItems = auditStats[0]?.total_items || 0;
-
-                    const porcentajeDocs = totalDocs > 0 ? Math.round((docsCompletados / totalDocs) * 100) : 0;
-                    const porcentajeVideos = totalVideos > 0 ? Math.round((videosVistos / totalVideos) * 100) : 0;
-                    const porcentajeAuditoria = totalItems > 0 ? Math.round((itemsCumplidos / totalItems) * 100) : 0;
-                    const porcentajeGeneral = Math.round((porcentajeDocs + porcentajeVideos + porcentajeAuditoria) / 3);
-
-                    res.json({
-                        empresa,
-                        estadisticas: {
-                            documentos: {
-                                total: totalDocs,
-                                completados: docsCompletados,
-                                pendientes: totalDocs - docsCompletados,
-                                porcentaje: porcentajeDocs
-                            },
-                            videos: {
-                                total: totalVideos,
-                                vistos: videosVistos,
-                                pendientes: totalVideos - videosVistos,
-                                porcentaje: porcentajeVideos
-                            },
-                            auditoria: {
-                                total_items: totalItems,
-                                cumplidos: itemsCumplidos,
-                                pendientes: totalItems - itemsCumplidos,
-                                porcentaje: porcentajeAuditoria
-                            },
-                            general: {
-                                porcentaje: porcentajeGeneral
-                            }
+                res.json({
+                    empresa,
+                    estadisticas: {
+                        documentos: {
+                            total: totalDocs,
+                            completados: docsCompletados,
+                            pendientes: totalDocs - docsCompletados,
+                            porcentaje: porcentajeDocs
+                        },
+                        videos: {
+                            total: totalVideos,
+                            vistos: videosVistos,
+                            pendientes: totalVideos - videosVistos,
+                            porcentaje: porcentajeVideos
+                        },
+                        auditoria: {
+                            total_items: totalItems,
+                            cumplidos: itemsCumplidos,
+                            pendientes: totalItems - itemsCumplidos,
+                            porcentaje: porcentajeAuditoria
+                        },
+                        general: {
+                            porcentaje: porcentajeGeneral
                         }
-                    });
+                    }
                 });
             });
         });

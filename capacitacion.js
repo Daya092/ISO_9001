@@ -19,46 +19,45 @@ const upload = multer({ storage: storage });
 
 // Obtener lista de documentos
 router.get('/documentos/:empresaId', (req, res) => {
-    const { empresaId } = req.params;
-    const db = getDb();
-    
-    db.get('SELECT id FROM empresas WHERE id = ?', [empresaId], (err, empresa) => {
-        if (err || !empresa) {
-            return res.status(500).json({ error: 'Error al obtener empresa' });
-        }
-
-        db.all(`
-            SELECT id, nombre, archivo_plantilla, archivo_subido, video_url, estado, fecha_subida
-            FROM documentos_capacitacion 
-            WHERE empresa_id = ?
-            ORDER BY nombre
-        `, [empresa.id], (err, documentos) => {
-            if (err) {
-                return res.status(500).json({ error: 'Error al obtener documentos' });
-            }
-
-            res.json({ documentos });
-        });
-    });
+    // Documentos fijos para todas las empresas
+    const videoBase = 'https://www.youtube.com/watch?v=l9cFvtXH5Bo&list=PL2te6ntc99jG02WFC-q0OEwY3YqHWkbTY';
+    const documentos = [
+        { nombre: 'Onjetivos-beneficios', archivo_plantilla: 'documentos/plantilla.xlsx', video_url: 'https://www.youtube.com/embed/l9cFvtXH5Bo?si=e06g-t5kc9lhG7fI' },
+        { nombre: 'ciclo phva', archivo_plantilla: 'documentos/plantilla.xlsx', video_url: videoBase },
+        { nombre: 'organizacion', archivo_plantilla: 'documentos/plantilla.xlsx', video_url: videoBase },
+        { nombre: 'liderazgo', archivo_plantilla: 'documentos/plantilla.xlsx', video_url: videoBase },
+        { nombre: 'planifacion', archivo_plantilla: 'documentos/plantilla.xlsx', video_url: videoBase },
+        { nombre: 'apoyo', archivo_plantilla: 'documentos/plantilla.xlsx', video_url: videoBase },
+        { nombre: 'operacion', archivo_plantilla: 'documentos/plantilla.xlsx', video_url: videoBase },
+        { nombre: 'desempeño', archivo_plantilla: 'documentos/plantilla.xlsx', video_url: videoBase },
+        { nombre: 'mejora', archivo_plantilla: 'documentos/plantilla.xlsx', video_url: videoBase },
+        { nombre: 'auditoria', archivo_plantilla: 'documentos/plantilla.xlsx', video_url: videoBase }
+    ];
+    res.json({ documentos });
 });
 
 // Descargar plantilla de documento
 router.get('/descargar/:id', (req, res) => {
-    const { id } = req.params;
-    const db = getDb();
-
-    db.get('SELECT archivo_plantilla, nombre FROM documentos_capacitacion WHERE id = ?', [id], (err, documento) => {
-        if (err) {
-            return res.status(500).json({ error: 'Error al obtener documento' });
-        }
-
-        if (!documento || !documento.archivo_plantilla) {
-            return res.status(404).json({ error: 'Plantilla no encontrada' });
-        }
-
-        const filePath = path.join(__dirname, 'public', 'templates', documento.archivo_plantilla);
-        res.download(filePath, `${documento.nombre}_plantilla.xlsx`);
-    });
+    // Descargar el archivo correspondiente según el nombre del documento
+    const documentos = [
+        { nombre: 'Objetivos-beneficios', archivo_plantilla: 'plantilla.xlsx', video_url: 'https://www.youtube.com/watch?v=l9cFvtXH5Bo&list=PL2te6ntc99jG02WFC-q0OEwY3YqHWkbTYL'  },
+        { nombre: 'ciclo phva', archivo_plantilla: 'ciclo-phva.xlsx' },
+        { nombre: 'organizacion', archivo_plantilla: 'organizacion.xlsx' },
+        { nombre: 'liderazgo', archivo_plantilla: 'liderazgo.xlsx' },
+        { nombre: 'planifacion', archivo_plantilla: 'planifacion.xlsx' },
+        { nombre: 'apoyo', archivo_plantilla: 'apoyo.xlsx' },
+        { nombre: 'operacion', archivo_plantilla: 'operacion.xlsx' },
+        { nombre: 'desempeño', archivo_plantilla: 'desempeño.xlsx' },
+        { nombre: 'mejora', archivo_plantilla: 'mejora.xlsx' },
+        { nombre: 'auditoria', archivo_plantilla: 'auditoria.xlsx' }
+    ];
+    const id = parseInt(req.params.id);
+    if (isNaN(id) || id < 0 || id >= documentos.length) {
+        return res.status(404).json({ error: 'Documento no encontrado' });
+    }
+    const doc = documentos[id];
+    const filePath = path.join(__dirname, 'public', 'documentos', doc.archivo_plantilla);
+    res.download(filePath, doc.archivo_plantilla);
 });
 
 // Subir documento completado

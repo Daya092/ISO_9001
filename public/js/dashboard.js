@@ -469,8 +469,14 @@ function subirDocumento(documentoId) {
             
             if (data.success) {
                 showAlert('Documento subido exitosamente', 'success');
-                loadCapacitacion();
-                loadDashboardData();
+                // Actualizar dashboard y gráficas forzosamente
+                const responseDashboard = await fetch('/desarrollo/dashboard');
+                const dataDashboard = await responseDashboard.json();
+                if (dataDashboard.empresa) {
+                    dashboardData = dataDashboard;
+                    updateDashboardStats(dataDashboard.estadisticas);
+                    initializeCharts(dataDashboard.estadisticas);
+                }
             } else {
                 showAlert(data.error || 'Error al subir documento', 'danger');
             }
@@ -497,8 +503,7 @@ async function marcarVideoVisto(documentoId) {
         const data = await response.json();
         if (data.success) {
             showAlert(data.message, 'success');
-            // Recargar solo la sección de capacitación para actualizar el estado
-            loadCapacitacion();
+            window.location.reload();
         } else {
             showAlert(data.error || 'Error al marcar/desmarcar video', 'danger');
         }
@@ -537,8 +542,7 @@ async function crearAuditoria() {
         if (data.success) {
             showAlert('Auditoría creada exitosamente', 'success');
             bootstrap.Modal.getInstance(document.getElementById('nuevaAuditoriaModal')).hide();
-            loadAuditorias();
-            loadDashboardData();
+            window.location.reload();
         } else {
             showAlert(data.error || 'Error al crear auditoría', 'danger');
         }
@@ -567,8 +571,7 @@ async function eliminarAuditoria(auditoriaId) {
         
         if (data.success) {
             showAlert('Auditoría eliminada exitosamente', 'success');
-            loadAuditorias();
-            loadDashboardData();
+            window.location.reload();
         } else {
             showAlert(data.error || 'Error al eliminar auditoría', 'danger');
         }
